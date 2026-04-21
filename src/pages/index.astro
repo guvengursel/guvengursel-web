@@ -1,11 +1,43 @@
 ---
-import Welcome from '../components/Welcome.astro';
 import Layout from '../layouts/Layout.astro';
-
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
 ---
 
 <Layout>
-	<Welcome />
+  <section class="hero">
+    <div class="hero-main">
+      <div class="hero-tag">O&amp;M &amp; AI · Alkoven, Austria</div>
+      <h1 class="hero-headline">
+        Clear the path.<br />
+        Let it flow.<br />
+        Nothing more.
+      </h1>
+      <p class="hero-bio">
+        Operations background. Digital toolset.<br />
+        One goal: make the work flow.
+      </p>
+    </div>
+    <div class="hero-pitch">
+      <span>Unblock the work.</span>
+      <span>Better flow.</span>
+      <span>Smarter operations.</span>
+    </div>
+  </section>
+
+  <section class="expertise">
+    <article class="expertise-card">
+      <h2>Operations &amp; Engineering</h2>
+      <p>A decade turning plans into running plants — hydropower
+         assembly, commissioning, and service in 30+ countries.</p>
+    </article>
+    <article class="expertise-card">
+      <h2>Digital &amp; Web</h2>
+      <p>Six years shipping web products and managing delivery
+         before I ever set foot on a construction site.</p>
+    </article>
+    <article class="expertise-card">
+      <h2>AI &amp; Automation</h2>
+      <p>Now bridging both — building tools that actually help the
+         people doing the work, not just reporting on it.</p>
+    </article>
+  </section>
 </Layout>
