@@ -1,6 +1,6 @@
 # CLAUDE.md — guvengursel.com
 
-Operating contract for Claude Code on this repo. Read this end-to-end
+Operating contract for Claude Code on this repo. Read it end-to-end
 at session start. Keep it short; update it when reality drifts.
 
 ---
@@ -89,7 +89,7 @@ Light:
 - `--bg-gradient` : `radial-gradient(ellipse at center, #fafaf6 0%, #f2ede3 70%, #ebe5d7 100%)`
 - `--border`      : `#d5cfc0`
 - `--logo`        : `#2a2a28`
-- `--nav-link`    : `#8a857a`
+- `--nav-link`    : `#a8a598`
 - `--pitch`       : `#a8a598`
 - `--toggle-bg`   : `rgba(0, 0, 0, 0.04)`
 - `--toggle-border`: `rgba(0, 0, 0, 0.08)`
@@ -141,8 +141,8 @@ and socials. `/` is reached via the site-name / logo element.
    and ask.
 4. **Delete Astro defaults first.** `Welcome.astro` and the default
    `Layout.astro` go before any new code lands. (Done in Step 1.)
-5. **Tokens before markup.** Global CSS (variables, reset, font
-   declarations, theme switch) ships first. Verify on a dummy page
+5. **Tokens before markup.** Global CSS (variables, reset, theme
+   resolver, initial @font-face) ships first. Verify on a dummy page
    that both themes flip cleanly. (Done in Step 2.)
 6. **Mobile-first.** Base styles for narrow viewport; layer desktop
    via `min-width` media queries.
@@ -172,7 +172,7 @@ and socials. `/` is reached via the site-name / logo element.
 8. `/contact` — minimal viable: mailto link + socials. Form optional.
 8.1. `/impressum` — static page with legal notice. Linked from footer.
 8.2. `/privacy` — static page with data protection notice. Linked
-     from footer.
+     linked from footer.
 9. Final pass: `astro build`, verify no `googleapis`/`gstatic` in
    `dist/`, Lighthouse check, commit, push.
 
