@@ -1,0 +1,66 @@
+/* === Print =================================================== */
+@media print {
+  body {
+    background: #fff;
+    color: #111;
+    padding: 0;
+  }
+
+  .sumi {
+    background: #fff;
+    border: none;
+    min-height: auto;
+  }
+
+  .net-strip,
+  .hero-net,
+  .temp-rig,
+  .sample-btn,
+  .lang-notice,
+  .site-nav,
+  .lang-menu,
+  .snap-row {
+    display: none !important;
+  }
+
+  h1, h2, h3, h4, h5, h6, .page-title, .blog-row-title {
+    color: #111;
+  }
+
+  .page-lede, .bio-closer, .hero-headline {
+    color: #333;
+  }
+
+  .legal-prose p, .bio-body, .post-prose p {
+    color: #222;
+  }
+
+  a {
+    color: #111;
+    text-decoration: underline;
+  }
+}
+
+/* === Accessibility — focus + reduced motion ================
+ * `:focus-visible` only paints the ring on keyboard focus, not
+ * mouse click; theme-aware via --accent. The reduced-motion
+ * media query disables all transitions/animations for users
+ * who prefer reduced motion (WCAG 2.3.3).
+ * ============================================================ */
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: var(--radius-xs);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

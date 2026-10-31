@@ -1,75 +1,250 @@
 ---
 import '../styles/global.css';
+import { ClientRouter } from 'astro:transitions';
+import { getCollection } from 'astro:content';
+import { defaultLocale, locales, ui } from '../i18n/ui';
+import { basePathFrom, localizedPath, pageLocales, useTranslations } from '../i18n/utils';
+import type { Locale } from '../i18n/utils';
+import LanguageSwitch from '../components/LanguageSwitch.astro';
 
-interface Props {
-  title: string;
-  description?: string;
+const {
+  title = "Güven Gürsel — operations × digital × AI",
+  description = "Operations background, digital toolset, one goal: make the work flow.",
+  locale = defaultLocale,
+  alternates = true,
+} = Astro.props;
+
+const t = useTranslations(locale);
+const htmlLang = locale;
+
+// Base path of the current page, locale prefix stripped and normalized
+// (directory builds render a trailing slash; the matrix never carries one).
+const basePath = basePathFrom(Astro.url.pathname);
+
+// The blog is data-driven: a locale's /blog exists once it has a post.
+const blogLocales: Set<string> = new Set(
+  (await getCollection('blog')).map((post) => post.data.locale),
+);
+
+// Locales the current page genuinely exists in — hreflang-grade truth.
+const available = new Set(pageLocales(basePath, blogLocales));
+
+// Switcher targets (ADR 0007): every locale, always — the current one
+// renders as the emphasized non-link. When the page has no translation
+// in the target locale, the switch lands on that locale's home instead
+// of the switcher shrinking or vanishing.
+const switchTargets = (locales as readonly Locale[]).map((l) => ({
+  locale: l,
+  href: available.has(l) ? localizedPath(l, basePath) : localizedPath(l, '/'),
+  translated: available.has(l),
+}));
+
+const canonicalURL = new URL(Astro.url.pathname, Astro.site).href;
+
+// hreflang alternates must match the canonical URL of each target page.
+// Directory builds render a trailing slash on Astro.url.pathname (which
+// canonicalURL keeps), so the slashless matrix paths get canonicalized here.
+const alternateURL = (l: Locale) => {
+  const path = localizedPath(l, basePath);
+  return new URL(path === '/' ? path : `${path}/`, Astro.site).href;
+};
+
+const personJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name: 'Güven Gürsel',
+  url: new URL('/', Astro.site).href,
+  email: 'mailto:contact@guvengursel.com',
+  jobTitle: 'Operations & AI workflow consultant',
+  address: { '@type': 'PostalAddress', addressLocality: 'Alkoven', addressCountry: 'AT' },
+  sameAs: [
+    'https://github.com/guvengursel',
+    'https://x.com/gurselguven',
+  ],
+  knowsLanguage: [
+    { '@type': 'Language', name: 'Turkish' },
+    { '@type': 'Language', name: 'English' },
+    { '@type': 'Language', name: 'German' },
+  ],
+};
+
+// Soft language notice candidates (ADR 0006): visitors whose browser
+// language matches a variant of this page get a dismissible hint.
+const noticeMap: Record<string, { href: string; message: string; link: string; dismiss: string }> = {};
+for (const l of locales as readonly Locale[]) {
+  if (l === locale || l === defaultLocale || !available.has(l)) continue; // English pages never nag; non-EN visitors chose to be here
+  const dict = ui[l];
+  noticeMap[l] = {
+    href: localizedPath(l, basePath),
+    message: dict['notice.message'],
+    link: dict['notice.link'],
+    dismiss: dict['notice.dismiss'],
+  };
 }
 
-const { title, description = 'Güven Gürsel — Operations · Digital · AI' } = Astro.props;
+const ogLocales = { en: 'en_US', tr: 'tr_TR', de: 'de_DE' } as Record<string, string>;
+const ogLocale = ogLocales[locale] ?? 'en_US';
+const alternateOgLocales = (locales as readonly Locale[])
+  .filter((l) => l !== locale && available.has(l))
+  .map((l) => ogLocales[l]);
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang={htmlLang}>
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <script>
-      const stored = localStorage.getItem('theme');
-      const sys = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
-      const theme = stored || sys;
-      if (theme === 'light') document.documentElement.setAttribute('data-theme', 'light');
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+
+    <ClientRouter />
+
+    <script is:inline>
+      document.documentElement.classList.add('js');
     </script>
-    <title>{title}</title>
+
+    <meta name="generator" content={Astro.generator} />
+    <meta name="author" content="Güven Gürsel" />
     <meta name="description" content={description} />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="theme-color" content="#0b0e13" />
+
+    <link rel="canonical" href={canonicalURL} />
+    {alternates && (
+      <>
+        {available.has(defaultLocale) && (
+          <link rel="alternate" hreflang="en" href={alternateURL(defaultLocale)} />
+        )}
+        {(locales as readonly Locale[]).filter((l) => l !== defaultLocale && available.has(l)).map((l) => (
+          <link rel="alternate" hreflang={l} href={alternateURL(l)} />
+        ))}
+        <link rel="alternate" hreflang="x-default" href={alternateURL(defaultLocale)} />
+      </>
+    )}
+
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalURL} />
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="/og-image.png" />
-    <meta name="twitter:card" content="summary" />
+    <meta property="og:site_name" content="Güven Gürsel" />
+    <meta property="og:image" content={new URL('/og-image.png', Astro.site).href} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Güven Gürsel — operations × digital × AI" />
+    <meta property="og:locale" content={ogLocale} />
+    {alternates && alternateOgLocales.map((og) => (
+      <meta property="og:locale:alternate" content={og} />
+    ))}
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@gurselguven" />
+    <meta name="twitter:creator" content="@gurselguven" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={new URL('/og-image.png', Astro.site).href} />
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+
+    <link rel="preload" href="/fonts/cormorant-garamond-300-italic.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/dm-mono-300.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/dm-mono-400.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/archivo-600-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/archivo-600-ext.woff2" as="font" type="font/woff2" crossorigin />
+    {locale === 'tr' && (
+      <>
+        <link rel="preload" href="/fonts/dm-mono-300-ext.woff2" as="font" type="font/woff2" crossorigin />
+        <link rel="preload" href="/fonts/dm-mono-400-ext.woff2" as="font" type="font/woff2" crossorigin />
+        <link rel="preload" href="/fonts/cormorant-garamond-300-italic-ext.woff2" as="font" type="font/woff2" crossorigin />
+      </>
+    )}
+
+    <script type="application/ld+json" set:html={JSON.stringify(personJsonLd)} />
+
+    <title>{title}</title>
   </head>
   <body>
     <div class="sumi">
-      <header>
-        <a href="/" class="logo">guvengursel</a>
-        <nav>
-          <a href="/about">about</a>
-          <a href="/agenthub">agents</a>
-          <a href="/vibe-lab">vibe-lab</a>
-          <a href="/contact">contact</a>
+      <header class="site-header">
+        <a class="logo-wrap" href={localizedPath(locale, '/')} aria-label="Güven Gürsel — home" data-astro-prefetch>
+          <span class="g-mark" aria-hidden="true">
+            <span class="g-mark-colon">:</span><span class="g-mark-letter">g</span>
+          </span>
+          <span class="logo-name">Güven Gürsel</span>
+        </a>
+        <nav class="site-nav">
+          <a class="nav-link" href={localizedPath(locale, '/about')} data-astro-prefetch>{t('nav.about')}</a>
+          {blogLocales.has(locale) && (
+            <a class="nav-link" href={localizedPath(locale, '/blog')} data-astro-prefetch>{t('nav.blog')}</a>
+          )}
+          <a class="nav-link" href={localizedPath(locale, '/vibe-lab')} data-astro-prefetch>{t('nav.vibeLab')}</a>
+          <a class="nav-link" href={localizedPath(locale, '/contact')} data-astro-prefetch>{t('nav.contact')}</a>
         </nav>
-        <button class="theme-toggle" aria-label="Toggle theme">
-          <svg class="icon-sun" width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <circle cx="8" cy="8" r="3.5" stroke="currentColor" stroke-width="1.2"/>
-            <path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M3.4 12.6l1.4-1.4M11.2 4.8l1.4-1.4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
-          </svg>
-          <svg class="icon-moon" width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <path d="M8 1.5a6.5 6.5 0 109 9 6.5 6.5 0 01-9-9z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </button>
+        <LanguageSwitch locale={locale} targets={switchTargets} />
       </header>
-      <main>
+
+      <main class="site-main">
         <slot />
       </main>
-      <footer>
-        <span>© 2026 Güven Gürsel</span>
-        <div class="footer-links">
-          <a href="/impressum">impressum</a>
-          <a href="/privacy">privacy</a>
-          <a href="https://github.com/guvengursel" target="_blank" rel="noopener">github</a>
-        </div>
+
+      <footer class="site-footer">
+        <span class="footer-copy">© 2026 Güven Gürsel</span>
+        <nav class="footer-nav">
+          <a class="nav-link" href={localizedPath(locale, '/impressum')}>{t('footer.impressum')}</a>
+          <span class="nav-sep" aria-hidden="true"> · </span>
+          <a class="nav-link" href={localizedPath(locale, '/privacy')}>{t('footer.privacy')}</a>
+          <span class="nav-sep" aria-hidden="true"> · </span>
+          <a class="nav-link" href="https://github.com/guvengursel" target="_blank" rel="me noopener">GitHub</a>
+          <span class="nav-sep" aria-hidden="true"> · </span>
+          <a class="nav-link" href="https://x.com/gurselguven" target="_blank" rel="me noopener">X</a>
+        </nav>
       </footer>
     </div>
-    <script>
-      const toggle = document.querySelector('.theme-toggle');
-      toggle?.addEventListener('click', () => {
-        const current = document.documentElement.getAttribute('data-theme');
-        const next = current === 'light' ? 'dark' : 'light';
-        document.documentElement.setAttribute('data-theme', next);
-        localStorage.setItem('theme', next);
-      });
+
+    {Object.keys(noticeMap).length > 0 && (
+      <div id="lang-notice" class="lang-notice" hidden>
+        <span data-notice-message></span>
+        <a id="lang-notice-link" class="lang-notice-link" href="#" data-notice-link></a>
+        <button id="lang-notice-dismiss" class="lang-notice-dismiss" aria-label="Dismiss" data-notice-dismiss>×</button>
+      </div>
+    )}
+
+    <script is:inline define:vars={{ noticeMap }}>
+      // Soft language notice: shown when the visitor's browser language
+      // matches a variant of this page. Never redirects; dismissal of
+      // every offered language is remembered. The document survives
+      // ClientRouter navigations, so the notice re-binds on every
+      // astro:page-load against the freshly rendered markup.
+      (() => {
+        const bind = () => {
+          const notice = document.getElementById('lang-notice');
+          if (!notice || Object.keys(noticeMap).length === 0) return;
+          const candidates = Object.entries(noticeMap);
+          let dismissed = null;
+          try {
+            dismissed = localStorage.getItem('lang-notice-dismissed');
+          } catch {
+            // Storage unavailable; show the notice.
+          }
+          const prefs = (navigator.languages ?? [navigator.language]).map((tag) => tag.toLowerCase());
+          const hit = candidates.find(([locale]) => !dismissed?.includes(locale) && prefs.some((p) => p.startsWith(locale)));
+          if (!hit) return;
+          const offer = hit[1];
+          notice.querySelector('[data-notice-message]').textContent = offer.message;
+          const link = notice.querySelector('[data-notice-link]');
+          link.href = offer.href;
+          link.textContent = offer.link;
+          notice.querySelector('[data-notice-dismiss]').setAttribute('aria-label', offer.dismiss);
+          notice.hidden = false;
+          notice.querySelector('[data-notice-dismiss]')?.addEventListener('click', () => {
+            notice.hidden = true;
+            try {
+              const prev = localStorage.getItem('lang-notice-dismissed');
+              localStorage.setItem('lang-notice-dismissed', prev ? prev + ',' + hit[0] : hit[0]);
+            } catch {
+              // Persistence unavailable; hide for this view only.
+            }
+          });
+        };
+        document.addEventListener('astro:page-load', bind);
+      })();
     </script>
   </body>
 </html>

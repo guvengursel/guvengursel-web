@@ -1,0 +1,14 @@
+---
+// Horizontal scroll-snap strip: native swipe on touch, arrow-key
+// scrollable, zero JavaScript. Children snap to the start edge.
+
+interface Props {
+  label?: string;
+}
+
+const { label } = Astro.props;
+---
+
+<div class="snap-row" role="group" aria-label={label}>
+  <slot />
+</div>

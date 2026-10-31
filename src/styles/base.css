@@ -1,0 +1,99 @@
+/* === Reset === */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+img, video, canvas, svg {
+  display: block;
+  max-width: 100%;
+}
+
+input, button, textarea, select {
+  font: inherit;
+}
+
+p, h1, h2, h3, h4, h5, h6 {
+  overflow-wrap: break-word;
+}
+
+/* === Base === */
+body {
+  background-color: var(--bg);
+  color: var(--body);
+  font-family: "DM Mono", monospace;
+  padding:
+    max(0.75rem, env(safe-area-inset-top))
+    max(0.75rem, env(safe-area-inset-right))
+    max(0.75rem, env(safe-area-inset-bottom))
+    max(0.75rem, env(safe-area-inset-left));
+  min-height: 100vh;
+  transition: background 0.4s ease;
+}
+
+h1, h2, h3,
+h4, h5, h6 {
+  color: var(--heading);
+  font-family: "Archivo", sans-serif;
+  font-weight: 600;
+}
+
+a {
+  color: var(--body);
+  text-decoration: underline;
+  text-decoration-thickness: 0.5px;
+  text-underline-offset: 2px;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: var(--accent);
+}
+
+small {
+  color: var(--pitch);
+}
+
+blockquote {
+  border-left: 2px solid var(--border);
+  padding: 0.25rem 0 0.25rem 1.25rem;
+  margin: 2rem 0;
+}
+
+ul, ol {
+  padding-left: 1.5rem;
+}
+
+li::marker {
+  color: var(--accent);
+}
+
+.sumi {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem;
+  border-radius: var(--radius-l);
+  background: var(--bg-gradient);
+  overflow: hidden;
+  position: relative;
+  min-height: calc(100vh - 1.5rem);
+  min-height: calc(100svh - 1.5rem);
+  transition: background 0.4s ease;
+  display: flex;
+  flex-direction: column;
+}
+

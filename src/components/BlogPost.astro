@@ -1,0 +1,31 @@
+---
+// Full article (Log blueprint): prose reuses the entry/legal vocabulary.
+import type { CollectionEntry } from 'astro:content';
+import { render } from 'astro:content';
+import PageHeader from './PageHeader.astro';
+import NetStrip from './NetStrip.astro';
+
+interface Props {
+  post: CollectionEntry<'blog'>;
+  backHref: string;
+  backLabel: string;
+}
+
+const { post, backHref, backLabel } = Astro.props;
+const { Content } = await render(post);
+---
+
+<section class="post">
+  <PageHeader
+    kicker={post.data.pubDate.toISOString().slice(0, 10)}
+    title={post.data.title}
+    lede={post.data.description}
+  />
+  <NetStrip seed={post.data.pubDate.valueOf() % 97} class="net-strip" />
+
+  <div class="legal-prose post-prose">
+    <Content />
+  </div>
+
+  <a class="notfound-back" href={backHref}>{backLabel}</a>
+</section>

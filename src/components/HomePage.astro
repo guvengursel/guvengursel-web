@@ -1,0 +1,88 @@
+---
+// Shared trilingual homepage shell: the Forward Pass hero stage, the
+// expertise cards, and the River Runs Again endorsement. Each locale
+// arrives as one pack (copy + haiku set + network seeds) — the markup
+// and its wiring are shared exactly. EN relies on Layout defaults for
+// title/description; tr/de carry theirs in the pack.
+import Layout from '../layouts/Layout.astro';
+import Network from './Network.astro';
+import StageScript from './StageScript.astro';
+import type { HomePack } from '../i18n/content/home';
+
+interface Props {
+  locale: 'en' | 'tr' | 'de';
+  pack: HomePack;
+}
+
+const { locale, pack } = Astro.props;
+const copy = pack;
+const { haikus, seeds } = pack;
+const [seedA, seedB, seedC] = seeds;
+---
+
+<Layout locale={locale} title={copy.title} description={copy.description}>
+  <section class="hero" data-haiku-stage data-topology="0">
+    <Network seed={seedA} topology={0} class="hero-net" />
+    <Network seed={seedB} topology={1} class="hero-net" />
+    <Network seed={seedC} topology={2} class="hero-net" />
+    <div class="hero-tag">{copy.heroTag}</div>
+    <h1 class="hero-headline" data-haiku>
+      <span>{haikus[0][0]}</span>
+      <span>{haikus[0][1]}</span>
+      <span>{haikus[0][2]}</span>
+    </h1>
+    <p class="hero-bio">
+      {copy.heroBio[0]}<br />
+      {copy.heroBio[1]}
+    </p>
+    <div class="temp-rig">
+      <div class="rig-group">
+        <label class="temp-label" for="temp">temp</label>
+        <input id="temp" class="temp-input" type="range" min="0" max="100" step="1" value="70" aria-label={copy.stage.temp} />
+        <span class="temp-readout" data-temp-readout>0.70</span>
+      </div>
+      <div class="rig-group">
+        <label class="temp-label" for="topp">top-p</label>
+        <input id="topp" class="temp-input" type="range" min="0" max="100" step="1" value="100" aria-label={copy.stage.topp} />
+        <span class="temp-readout" data-topp-readout>1.00</span>
+        <span class="temp-readout temp-readout--eff" data-eff-readout>→ 0.70</span>
+      </div>
+      <div class="rig-group rig-actions">
+        <span class="temp-readout temp-readout--eff" data-telemetry>epoch 000 · lp —</span>
+        <button class="sample-btn" data-haiku-next aria-label={copy.stage.next}>
+          <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
+        </button>
+        <button class="seed-btn" data-reseed aria-label={copy.stage.reseed}>reseed</button>
+        <button class="seed-btn auto-btn" data-auto aria-pressed="false" aria-label={copy.stage.auto}>auto</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="expertise">
+    {copy.expertise.map((card) => (
+      <article class="expertise-card">
+        <h2>{card.title}</h2>
+        <p>{card.body}</p>
+      </article>
+    ))}
+  </section>
+
+  <section class="rra-endorsement" aria-labelledby="rra-title">
+    <div class="rra-intro">
+      <p class="rra-kicker">{copy.rra.kicker}</p>
+      <h2 class="rra-title" id="rra-title">{copy.rra.title}</h2>
+      <p>{copy.rra.intro}</p>
+    </div>
+
+    <div class="rra-paths">
+      {copy.rra.paths.map((path) => (
+        <article class="rra-path">
+          <h3>{path.title}</h3>
+          <p>{path.body}</p>
+        </article>
+      ))}
+    </div>
+  </section>
+
+  <StageScript haikus={haikus} />
+</Layout>

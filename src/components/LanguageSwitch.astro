@@ -1,0 +1,66 @@
+---
+// Language menu (ADR 0008): a compact native <details> dropdown at the
+// far right of the header. The closed control shows the current
+// locale's code; the menu offers every locale — when the current page
+// has no translation in the target locale, the switch lands on that
+// locale's home instead of a 404. Visible labels are uppercase locale
+// codes; each option carries its full endonym via aria-label. The
+// control works without JavaScript; the script only closes the menu on
+// outside clicks. hreflang-grade truth stays in pageLocales().
+import { locales } from '../i18n/ui';
+import { useTranslations } from '../i18n/utils';
+import type { Locale } from '../i18n/utils';
+
+export interface SwitchTarget {
+  locale: Locale;
+  href: string;
+  translated: boolean;
+}
+
+interface Props {
+  locale: Locale;
+  targets: SwitchTarget[];
+}
+
+const { locale, targets } = Astro.props;
+const t = useTranslations(locale);
+const ordered = (locales as readonly Locale[]).map(
+  (l) => targets.find((target) => target.locale === l),
+);
+---
+
+<nav class="lang-menu" aria-label={t('nav.languages')}>
+  <details class="lang-details">
+    <summary class="lang-summary" aria-label={t('nav.languages')}>
+      <span class="lang-code">{locale.toUpperCase()}</span>
+      <span class="lang-caret" aria-hidden="true"></span>
+    </summary>
+    <ul class="lang-options">
+      {ordered.map((target) => target && (
+        <li>
+          <a
+            class="nav-link lang-link"
+            href={target.href}
+            lang={target.locale}
+            hreflang={target.locale}
+            aria-label={t(`switch.${target.locale}`)}
+            aria-current={target.locale === locale ? 'true' : undefined}
+            data-translated={target.translated ? 'true' : 'false'}
+            data-astro-prefetch
+          >{target.locale.toUpperCase()}</a>
+        </li>
+      ))}
+    </ul>
+  </details>
+</nav>
+
+<script is:inline>
+  // Close the open language menu when clicking outside it (Escape and
+  // option navigation close it natively). Registered once per document;
+  // ClientRouter navigations re-render the markup closed.
+  document.addEventListener('click', (event) => {
+    for (const menu of document.querySelectorAll('details.lang-details[open]')) {
+      if (!menu.contains(event.target)) menu.open = false;
+    }
+  });
+</script>

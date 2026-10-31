@@ -1,0 +1,19 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="404 — page not found" description="Page not found — back to home." alternates={false}>
+  <section class="notfound">
+    <p class="notfound-eyebrow">404</p>
+    <h1 class="notfound-title">Page not found.</h1>
+    <p class="notfound-line">
+      The page you're looking for doesn't exist, or has moved.
+    </p>
+    <a class="notfound-back" href="/">← back to home</a>
+    <p class="notfound-langs">
+      <a class="nav-link" href="/tr/" lang="tr" data-astro-prefetch>Türkçe</a>
+      <span class="nav-sep" aria-hidden="true"> · </span>
+      <a class="nav-link" href="/de/" lang="de" data-astro-prefetch>Deutsch</a>
+    </p>
+  </section>
+</Layout>

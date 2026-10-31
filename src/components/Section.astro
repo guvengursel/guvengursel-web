@@ -1,0 +1,25 @@
+---
+// Numbered section frame — the Dossier rhythm. A narrow meta column
+// (index + label) rides beside the body on wide screens and stacks
+// above it on narrow ones, breaking the straight-down page flow
+// without any scroll-tied motion.
+
+interface Props {
+  label?: string;
+  index?: string;
+}
+
+const { label, index } = Astro.props;
+---
+
+<section class="bp-section">
+  {(index || label) && (
+    <div class="bp-section-meta">
+      {index && <span class="bp-index">{index}</span>}
+      {label && <span class="bp-label">{label}</span>}
+    </div>
+  )}
+  <div class="bp-section-body">
+    <slot />
+  </div>
+</section>

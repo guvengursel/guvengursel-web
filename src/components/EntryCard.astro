@@ -1,0 +1,20 @@
+---
+// Teaser card for Log/Master-detail blueprints (experiments, essays,
+// project entries). Whole card is the link when href is provided.
+
+interface Props {
+  index: string;
+  title: string;
+  meta?: string;
+  href?: string;
+}
+
+const { index, title, meta, href } = Astro.props;
+const Tag = (href ? 'a' : 'article') as 'a' | 'article';
+---
+
+<Tag class="entry-card" href={href}>
+  <span class="entry-card-index">{index}</span>
+  <h3 class="entry-card-title">{title}</h3>
+  {meta && <span class="entry-card-meta">{meta}</span>}
+</Tag>

@@ -1,0 +1,117 @@
+---
+// Shared trilingual vibe-lab shell (ADR 0009): master-detail index for
+// the lab experiments. Per-locale copy arrives as one pack; markup and
+// the hash-navigation script are shared exactly.
+//
+// Add an experiment by appending to the pack's `entries` (all three
+// locale packs) and matching markup below. URL hash (#slug) deep-links
+// to an entry; the first entry opens by default.
+import Layout from '../layouts/Layout.astro';
+import type { VibeLabPack } from '../i18n/content/vibeLab';
+
+interface Props {
+  locale: 'en' | 'tr' | 'de';
+  pack: VibeLabPack;
+}
+
+const { locale, pack } = Astro.props;
+const entries = pack.entries;
+const defaultSlug = entries[0].slug;
+---
+
+<Layout locale={locale} title="Vibe Lab — Güven Gürsel" description={pack.description}>
+
+  <section class="page-header">
+    <h1 class="page-title">Vibe Lab</h1>
+    <p class="page-lede">{pack.lede}</p>
+  </section>
+
+  <div class="lab-layout">
+
+    <aside class="lab-sidebar" aria-label={pack.sidebarLabel}>
+      <ul class="lab-nav">
+        {entries.map((e, i) => (
+          <li>
+            <a
+              class="lab-nav-item"
+              href={`#${e.slug}`}
+              data-target={e.slug}
+              aria-current={i === 0 ? 'true' : 'false'}
+            >
+              <span class="lab-nav-title">{e.navTitle}</span>
+              <span class="lab-nav-meta">{e.year} · {e.status}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </aside>
+
+    <div class="lab-detail">
+
+      {entries.map((e, i) => (
+        <article class="entry" id={e.slug} data-entry={e.slug} data-active={i === 0 ? '' : undefined}>
+
+          <div class="entry-frontmatter">
+            <span>{e.year}</span>
+            <span class="sep">·</span>
+            <span>{e.frontmatter}</span>
+          </div>
+
+          <h2 class="entry-title">{e.navTitle}</h2>
+          <p class="entry-desc">{e.desc}</p>
+
+          <p>{e.p1}</p>
+
+          <blockquote class="entry-quote">{e.quote}</blockquote>
+
+          <p>{e.p2}</p>
+
+          <h3 class="entry-h">{e.availabilityH}</h3>
+
+          <p>{e.availabilityP}</p>
+
+          <h3 class="entry-h">{e.builtH}</h3>
+
+          <p>{e.builtP}</p>
+
+        </article>
+      ))}
+
+    </div>
+  </div>
+
+  <script is:inline define:vars={{ defaultSlug }}>
+    const entries = Array.from(document.querySelectorAll('.entry[data-entry]'));
+    const navItems = Array.from(document.querySelectorAll('.lab-nav-item'));
+
+    function show(slug) {
+      const valid = entries.some(e => e.dataset.entry === slug) ? slug : defaultSlug;
+      entries.forEach(e => {
+        if (e.dataset.entry === valid) e.setAttribute('data-active', '');
+        else e.removeAttribute('data-active');
+      });
+      navItems.forEach(n => {
+        n.setAttribute('aria-current', n.dataset.target === valid ? 'true' : 'false');
+      });
+      if (window.matchMedia('(max-width: 719px)').matches) {
+        document.querySelector('.lab-detail')?.scrollTo({ top: 0, behavior: 'instant' });
+      }
+    }
+
+    const initial = location.hash.slice(1) || defaultSlug;
+    show(initial);
+
+    navItems.forEach(n => {
+      n.addEventListener('click', e => {
+        e.preventDefault();
+        const slug = n.dataset.target;
+        history.replaceState(null, '', '#' + slug);
+        show(slug);
+      });
+    });
+
+    window.addEventListener('hashchange', () => {
+      show(location.hash.slice(1) || defaultSlug);
+    });
+  </script>
+</Layout>

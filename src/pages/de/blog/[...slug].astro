@@ -1,0 +1,22 @@
+---
+// /de/blog — data-driven (ADR 0006): builds nothing until a DE post exists.
+import Layout from '../../../layouts/Layout.astro';
+import BlogIndex from '../../../components/BlogIndex.astro';
+import BlogPost from '../../../components/BlogPost.astro';
+import { blogChrome, blogStaticPaths } from '../../../i18n/blog';
+
+export async function getStaticPaths() {
+  return blogStaticPaths('de');
+}
+
+const { posts, post } = Astro.props;
+const { labels, hrefBase, backLabel, pageTitle, description } = blogChrome('de');
+---
+
+<Layout locale="de" title={pageTitle(post)} description={description(post)}>
+  {post ? (
+    <BlogPost post={post} backHref={hrefBase} backLabel={backLabel} />
+  ) : (
+    <BlogIndex posts={posts} hrefBase={hrefBase} labels={labels} />
+  )}
+</Layout>

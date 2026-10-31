@@ -1,26 +1,6 @@
 ---
-import Layout from '../layouts/Layout.astro';
+import ContactPage from '../components/ContactPage.astro';
+import { contactEn } from '../i18n/content/contact';
 ---
 
-<Layout title="Contact — Güven Gürsel">
-  <section class="page-header">
-    <h1 class="page-title">Contact</h1>
-    <p class="page-lede">
-      Direct line — email is fastest. Code lives on GitHub.
-    </p>
-  </section>
-
-  <section class="contact-links">
-    <a class="contact-link" href="mailto:contact@guvengursel.com">
-      <span class="contact-label">Email</span>
-      <span class="contact-value">contact@guvengursel.com</span>
-    </a>
-    <a class="contact-link"
-       href="https://github.com/guvengursel"
-       target="_blank"
-       rel="me noopener">
-      <span class="contact-label">GitHub</span>
-      <span class="contact-value">github.com/guvengursel</span>
-    </a>
-  </section>
-</Layout>
+<ContactPage locale="en" copy={contactEn} seed={83} />

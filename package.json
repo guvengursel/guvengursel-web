@@ -1,16 +1,31 @@
 {
-  "name": "guvengursel-web",
+  "name": "guvengursel-dev",
   "type": "module",
   "version": "0.0.1",
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "scripts": {
     "dev": "astro dev",
-    "start": "astro dev",
+    "check": "astro check",
     "build": "astro build",
+    "build:assets": "node scripts/build-assets.mjs",
+    "test:production-contract": "node scripts/verify-production-contract.mjs",
+    "test:privacy-contract": "node --test tests/privacy-contract.test.mjs",
+    "test:rra-routing": "node --test tests/rra-routing.test.mjs",
+    "test:language-contract": "node --test tests/language-contract.test.mjs",
+    "test:i18n-navigation": "node --test tests/i18n-navigation.test.mjs",
+    "verify": "bash scripts/verify.sh",
     "preview": "astro preview",
     "astro": "astro"
   },
   "dependencies": {
-    "astro": "^6.1.7",
-    "@astrojs/sitemap": "^3.4.1"
+    "@astrojs/sitemap": "^3.7.2",
+    "astro": "^7.1.6"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.9",
+    "sharp": "^0.35.3",
+    "typescript": "^5.9.3"
   }
 }

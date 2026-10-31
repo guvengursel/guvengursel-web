@@ -23,5 +23,19 @@ pnpm-debug.log*
 # jetbrains setting folder
 .idea/
 
+# vscode personal preferences (extensions.json stays tracked)
+.vscode/launch.json
+
 # claude code local settings
 .claude/
+
+# zcode session artifacts (local plans, tooling state)
+.zcode/
+
+# agent-local runtime state (handoffs, plans) — not repository evidence
+.pi/
+.hermes/
+
+# dev server log
+.astro-dev.log
+.drafts/

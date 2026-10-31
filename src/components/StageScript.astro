@@ -1,0 +1,248 @@
+---
+// Shared haiku-stage controller: sampling console, joint sampler,
+// reseed sweep, and autopilot for every locale's home page. Inline
+// (define:vars) because it ships per-page with the haiku payload.
+interface Props {
+  haikus: string[][];
+}
+const { haikus } = Astro.props;
+---
+
+  <script is:inline define:vars={{ haikus }}>
+    // Scoped per-page script: with the ClientRouter active, inline scripts
+    // run once per document, so all stage logic re-binds on astro:page-load.
+    // Two controls drive the stage (pure CSS-variable choreography):
+    //   temp   — sampling temperature: visual heat + nucleus coupling
+    //   sample — fires one forward pass, then swaps in the next haiku
+    //            (the only way the poem changes)
+    const initStage = () => {
+      const stage = document.querySelector('[data-haiku-stage]');
+      // Guard against double binding: with the ClientRouter,
+      // astro:page-load also fires on the initial load.
+      if (stage?.dataset.init) return;
+      if (stage) stage.dataset.init = '1';
+      const headline = stage?.querySelector('[data-haiku]');
+      if (!stage || !headline) return;
+      const spans = Array.from(headline.querySelectorAll('span'));
+      let index = Math.floor(Math.random() * haikus.length);
+      const paint = () => spans.forEach((span, i) => { span.textContent = haikus[index][i] || ''; });
+      paint();
+
+      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const PASS_MS = reduced ? 0 : 1150;
+      let firing = false;
+      let epoch = 0;
+
+      const sample = () => {
+        if (firing) return;
+        firing = true;
+        headline.classList.add('is-swapping');
+        stage.setAttribute('data-firing', '1');
+        window.setTimeout(() => {
+          index = (index + 1) % haikus.length;
+          paint();
+          headline.classList.remove('is-swapping');
+          epoch += 1;
+          const r = ((epoch * 2654435761) % 997) / 997;
+          const telemetry = document.querySelector('[data-telemetry]');
+          if (telemetry) telemetry.textContent = 'epoch ' + String(epoch).padStart(3, '0') + ' · lp ' + (-(0.6 + r * 2.4)).toFixed(2);
+        }, PASS_MS);
+        window.setTimeout(() => {
+          stage.removeAttribute('data-firing');
+          firing = false;
+        }, PASS_MS + 400);
+      };
+
+      stage.querySelector('[data-haiku-next]')?.addEventListener('click', sample);
+
+      // Temperature shapes the distribution: hotter fields drift
+      // faster and widen the joint nucleus (eff = temp * top-p).
+      // The poem itself only changes on an explicit sample.
+      const tempInput = document.getElementById('temp');
+      const tempReadout = document.querySelector('[data-temp-readout]');
+      const effReadout = document.querySelector('[data-eff-readout]');
+      const toppInput = document.getElementById('topp');
+      const toppReadout = document.querySelector('[data-topp-readout]');
+      let temp = 0.7;
+      let topp = 1;
+      let lastHeatBucket = -1;
+      const updateEff = () => {
+        if (effReadout) effReadout.textContent = '→ ' + (temp * topp).toFixed(2);
+      };
+      // All numeric readouts flow through one gate: at most ~4 updates
+      // per second (instrument-panel pace), forced on slider release.
+      let lastTextTs = 0;
+      const updateTexts = (force = false) => {
+        const now = performance.now();
+        if (!force && now - lastTextTs < 250) return;
+        lastTextTs = now;
+        if (tempReadout) tempReadout.textContent = temp.toFixed(2);
+        if (toppReadout) toppReadout.textContent = topp.toFixed(2);
+        updateEff();
+      };
+      const applyTemp = (v01) => {
+        temp = v01;
+        stage.style.setProperty('--temp', temp.toFixed(3));
+        // Quantize the drift speed: retargeting a running CSS animation
+        // restarts it, so the bucket only changes in coarse steps.
+        const bucket = Math.round(temp * 6);
+        if (bucket !== lastHeatBucket) {
+          lastHeatBucket = bucket;
+          stage.style.setProperty('--heat-time', (3.2 - 2.6 * (bucket / 6)).toFixed(2) + 's');
+        }
+      };
+      if (tempInput && tempReadout) {
+        let initial = 70;
+        try {
+          const raw = localStorage.getItem('temp');
+          const stored = raw === null ? NaN : Number(raw);
+          if (Number.isFinite(stored)) initial = stored;
+        } catch {
+          // Storage unavailable; keep the default temperature.
+        }
+        tempInput.value = initial;
+        applyTemp(initial / 100);
+        updateTexts(true);
+        tempInput.addEventListener('input', () => {
+          applyTemp(Number(tempInput.value) / 100);
+          updateTexts();
+          try {
+            localStorage.setItem('temp', String(tempInput.value));
+          } catch {
+            // Persistence unavailable; keep this session only.
+          }
+        });
+        tempInput.addEventListener('change', () => updateTexts(true));
+      }
+
+      // Top-p (nucleus width) — coupled to temperature through the
+      // joint sampler: eff = temp * top-p, resolved entirely in CSS.
+      const applyTopp = (v01) => {
+        topp = v01;
+        stage.style.setProperty('--topp', topp.toFixed(3));
+      };
+      if (toppInput && toppReadout) {
+        let initialTopp = 100;
+        try {
+          const raw = localStorage.getItem('topp');
+          const stored = raw === null ? NaN : Number(raw);
+          if (Number.isFinite(stored)) initialTopp = stored;
+        } catch {
+          // Storage unavailable; keep the default width.
+        }
+        toppInput.value = initialTopp;
+        applyTopp(initialTopp / 100);
+        updateTexts(true);
+        toppInput.addEventListener('input', () => {
+          applyTopp(Number(toppInput.value) / 100);
+          updateTexts();
+          try {
+            localStorage.setItem('topp', String(toppInput.value));
+          } catch {
+            // Persistence unavailable; keep this session only.
+          }
+        });
+        toppInput.addEventListener('change', () => updateTexts(true));
+      }
+
+      // Reseed: sweep the WHOLE field (every node and edge, hidden ones
+      // included), then swap to a random topology at the wave's peak so
+      // the change lands mid-flash.
+      let reseeding = false;
+      stage.querySelector('[data-reseed]')?.addEventListener('click', () => {
+        if (reseeding || firing) return;
+        reseeding = true;
+        stage.setAttribute('data-firing', 'reseed');
+        window.setTimeout(() => {
+          const current = Number(stage.dataset.topology || '0');
+          let next = Math.floor(Math.random() * 3);
+          if (next === current) next = (current + 1 + Math.floor(Math.random() * 2)) % 3;
+          stage.dataset.topology = String(next);
+        }, reduced ? 0 : 680);
+        window.setTimeout(() => {
+          stage.removeAttribute('data-firing');
+          reseeding = false;
+        }, reduced ? 0 : 1400);
+      });
+
+      // Autopilot: the filters wander on their own. Temperature and
+      // nucleus drift toward explore/exploit targets with
+      // frame-rate-independent exponential smoothing on a rAF loop;
+      // the poem never changes without an explicit sample.
+      // The loop lives only while AUTO is on, does trivial per-frame
+      // work, and pauses automatically in background tabs. Numeric
+      // readouts refresh at ~10 Hz so the text never flickers.
+      const autoBtn = stage.querySelector('[data-auto]');
+      let autopilot = false;
+      let driftRAF = 0;
+      let lastTs = 0;
+      let phaseAcc = 0;
+      let phaseSpan = 9000 + Math.random() * 5000;
+      let explorePhase = true;
+      let tempTarget = temp;
+      let toppTarget = topp;
+      const clamp01 = (v) => Math.max(0, Math.min(1, v));
+      const pickTargets = () => {
+        explorePhase = Math.random() > 0.45;
+        if (explorePhase) {
+          tempTarget = 0.55 + Math.random() * 0.45;
+          toppTarget = 0.6 + Math.random() * 0.4;
+        } else {
+          tempTarget = 0.05 + Math.random() * 0.25;
+          toppTarget = 0.35 + Math.random() * 0.45;
+        }
+      };
+      const driftFrame = (ts) => {
+        if (!autopilot) return;
+        const dt = lastTs ? Math.min((ts - lastTs) / 1000, 0.05) : 0.016;
+        lastTs = ts;
+        phaseAcc += dt * 1000;
+        if (phaseAcc > phaseSpan) {
+          phaseAcc = 0;
+          phaseSpan = 9000 + Math.random() * 5000;
+          pickTargets();
+        }
+        const k = 1 - Math.exp(-dt * 1.6);
+        temp = clamp01(temp + (tempTarget - temp) * k);
+        topp = clamp01(topp + (toppTarget - topp) * k);
+        if (tempInput) tempInput.value = String(Math.round(temp * 100));
+        if (toppInput) toppInput.value = String(Math.round(topp * 100));
+        applyTemp(temp);
+        applyTopp(topp);
+        updateTexts();
+        driftRAF = window.requestAnimationFrame(driftFrame);
+      };
+      const setAutopilot = (on) => {
+        autopilot = on;
+        if (autoBtn) autoBtn.setAttribute('aria-pressed', String(on));
+        try {
+          localStorage.setItem('auto', on ? '1' : '0');
+        } catch {
+          // Persistence unavailable; this session only.
+        }
+        if (driftRAF) {
+          window.cancelAnimationFrame(driftRAF);
+          driftRAF = 0;
+        }
+        lastTs = 0;
+        if (on) {
+          pickTargets();
+          driftRAF = window.requestAnimationFrame(driftFrame);
+        }
+      };
+      autoBtn?.addEventListener('click', () => setAutopilot(!autopilot));
+      tempInput?.addEventListener('pointerdown', () => { if (autopilot) setAutopilot(false); });
+      toppInput?.addEventListener('pointerdown', () => { if (autopilot) setAutopilot(false); });
+      try {
+        if (localStorage.getItem('auto') === '1') setAutopilot(true);
+      } catch {
+        // Storage unavailable; start manual.
+      }
+
+      // Hand the entrance-animated spans over to rotation transitions.
+      window.setTimeout(() => headline.classList.add('is-live'), 1100);
+    };
+
+    initStage();
+    document.addEventListener('astro:page-load', initStage);
+  </script>

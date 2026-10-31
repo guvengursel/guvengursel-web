@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://guvengursel.com/sitemap-index.xml

@@ -1,0 +1,47 @@
+---
+// Shared trilingual about shell: dossier header, background prose, and
+// the resume-by-email section. Copy, headings, and section labels are
+// per-locale data.
+import Layout from '../layouts/Layout.astro';
+import PageHeader from './PageHeader.astro';
+import Section from './Section.astro';
+import NetStrip from './NetStrip.astro';
+
+interface AboutCopy {
+  title: string;
+  description: string;
+  heading: string;
+  lead: string;
+  body: string[];
+  closer: string;
+  sections: { background: string; resume: string };
+}
+
+interface Props {
+  locale: 'en' | 'tr' | 'de';
+  copy: AboutCopy;
+  seed: number;
+}
+
+const { locale, copy, seed } = Astro.props;
+---
+
+<Layout locale={locale} title={copy.title} description={copy.description}>
+  <section class="bio">
+    <PageHeader kicker="dossier" title={copy.heading} lede={copy.lead} />
+    <NetStrip seed={seed} class="net-strip" />
+
+    <Section index="01" label={copy.sections.background}>
+      {copy.body.map((paragraph) => (
+        <p class="bio-body">{paragraph}</p>
+      ))}
+      <p class="bio-closer"><em>{copy.closer}</em></p>
+    </Section>
+
+    <Section index="02" label={copy.sections.resume}>
+      <a class="nav-link" href="mailto:contact@guvengursel.com">
+        contact@guvengursel.com
+      </a>
+    </Section>
+  </section>
+</Layout>

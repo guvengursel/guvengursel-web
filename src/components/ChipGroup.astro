@@ -1,0 +1,20 @@
+---
+// Labeled chip cluster (capabilities, tools). Renders the established
+// skills vocabulary so About and Uses share one implementation.
+
+interface Props {
+  label: string;
+  chips: string[];
+}
+
+const { label, chips } = Astro.props;
+---
+
+<div class="skills-group">
+  <div class="skills-label">{label}</div>
+  <ul class="skills-tags">
+    {chips.map((chip) => (
+      <li>{chip}</li>
+    ))}
+  </ul>
+</div>

@@ -1,0 +1,654 @@
+/* ============================================================
+ * Forward Pass — the site's neural sampler identity
+ * Build-time generated field, joint sampler (eff = temp x top-p),
+ * and the neon duo-tone world. Selected 2026-08-28; see colophon.
+ * ============================================================ */
+
+@font-face { font-family: 'Archivo'; font-style: normal; font-weight: 600; font-display: swap; src: url('/fonts/archivo-600-ext.woff2') format('woff2'); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+@font-face { font-family: 'Archivo'; font-style: normal; font-weight: 600; font-display: swap; src: url('/fonts/archivo-600-latin.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+
+/* --- Neon — cyberpunk reactor world ---------------------------- */
+/* Duo-tone signal (cyan + magenta) on blue-black, scanlines, and
+   glow used as scarce ornament. The serif italic haiku stays:
+   human poetry inside the machine. */
+
+.sumi {
+  background: var(--bg);
+  border-radius: 0;
+}
+
+/* Scanlines sit above the content (pointer-transparent by design). */
+.sumi::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(232, 241, 245, 0.025) 0 1px,
+    transparent 1px 3px
+  );
+  pointer-events: none;
+}
+
+h1,
+h2,
+h3 {
+  font-family: "Archivo", sans-serif;
+  font-style: normal;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* The haiku: humanist serif with a faint cyan halo and a 1px
+   magenta ghost — chromatic hint, not a glitch show. */
+.hero-headline {
+  font-family: "Cormorant Garamond", serif;
+  font-style: italic;
+  font-weight: 300;
+  text-transform: none;
+  letter-spacing: -0.01em;
+  text-shadow:
+    0 0 24px rgba(44, 232, 224, 0.3),
+    1px 0 0 rgba(255, 61, 138, 0.14);
+}
+
+.hero-tag {
+  color: var(--accent);
+  text-shadow: 0 0 12px rgba(44, 232, 224, 0.5);
+}
+
+/* Neural field: build-time generated nodes and edges. Idle state is
+   a quiet cyan wireframe; the sampling wave is a one-shot flash whose
+   per-edge delays were computed at build time (Network.astro). */
+.hero-net {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  color: var(--accent);
+  z-index: 0;
+  pointer-events: none;
+  display: none;
+}
+
+[data-topology="0"] .hero-net[data-topology="0"],
+[data-topology="1"] .hero-net[data-topology="1"],
+[data-topology="2"] .hero-net[data-topology="2"] {
+  display: block;
+}
+
+/* Readability scrim: the field spans the full stage; a soft vignette
+   behind the poem keeps the serif legible at any density. */
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: radial-gradient(
+    120% 95% at 16% 45%,
+    rgba(11, 14, 19, 0.92) 0%,
+    rgba(11, 14, 19, 0.55) 36%,
+    transparent 70%
+  );
+}
+
+.hero-net .net-edge {
+  stroke: currentColor;
+  stroke-width: 1;
+  stroke-dasharray: 5 9;
+  animation: net-drift var(--heat-time, 2.4s) linear infinite;
+  /* Joint sampler: temperature shapes the distribution, then the
+     nucleus truncates it. eff = temp * top-p drives every element,
+     so the two knobs are coupled by construction. */
+  --eff: calc(var(--temp, 0.7) * var(--topp, 1));
+  opacity: calc(clamp(0, (var(--eff) - var(--p, 1)) * 40, 1) * var(--o, 0.15));
+  transition: opacity 0.3s ease;
+}
+
+@keyframes net-drift {
+  to { stroke-dashoffset: -14; }
+}
+
+.hero-net .net-node {
+  fill: currentColor;
+  filter: drop-shadow(0 0 4px rgba(44, 232, 224, 0.6));
+  transform-box: fill-box;
+  transform-origin: center;
+  --eff: calc(var(--temp, 0.7) * var(--topp, 1));
+  opacity: calc(clamp(0, (var(--eff) - var(--p, 1)) * 40, 1) * 0.55);
+  transition: opacity 0.3s ease;
+}
+
+/* Greedy decoding spine: the argmax chain, always inside the nucleus.
+   At temperature 0 it is the only lit path on the field. */
+.hero-net .net-edge.net-greedy {
+  stroke-width: 1.4;
+  stroke-dasharray: none;
+}
+
+.hero-net .net-node.net-greedy {
+  filter: drop-shadow(0 0 6px rgba(44, 232, 224, 0.9));
+}
+
+/* Heat: the whole field breathes up with temperature. */
+.hero-net .net-edges {
+  opacity: calc(0.35 + var(--temp, 0.7) * 0.65);
+}
+
+/* Forward pass: each edge flashes magenta at its precomputed --d,
+   then the wave hands over to the next layer. Fired on the stage. */
+.hero[data-firing="1"] .net-edge {
+  animation: edge-flash 0.55s ease var(--d) 1 both;
+}
+
+@keyframes edge-flash {
+  0% { opacity: 0; }
+  35% { opacity: 0.95; stroke: var(--accent-2); stroke-width: 1.6; }
+  100% { opacity: 0; }
+}
+
+.hero[data-firing="1"] .net-node {
+  animation: node-fire 0.5s ease var(--d) 1 both;
+}
+
+@keyframes node-fire {
+  0% { opacity: 0.25; }
+  40% { opacity: 1; fill: var(--accent-2); filter: drop-shadow(0 0 7px var(--accent)); }
+  100% { opacity: 0.9; }
+}
+
+/* Reseed sweep: the WHOLE field — every node and edge, nucleus or
+   not — rises in a magenta wave (baked delays compressed 3.5×), the
+   topology swaps at the peak, and the wave falls back. */
+.hero[data-firing="reseed"] .net-edge {
+  animation: reseed-edge 0.85s ease calc(var(--d) * 0.35) 1 both;
+}
+
+@keyframes reseed-edge {
+  0% { opacity: 0; }
+  45% { opacity: 0.85; stroke: var(--accent-2); stroke-width: 1.8; }
+  100% { opacity: 0; }
+}
+
+.hero[data-firing="reseed"] .net-node {
+  animation: reseed-node 0.85s ease calc(var(--d) * 0.35) 1 both;
+}
+
+@keyframes reseed-node {
+  0% { opacity: 0; transform: scale(1); }
+  45% { opacity: 1; fill: var(--accent); filter: drop-shadow(0 0 8px var(--accent)); transform: scale(2.1); }
+  100% { opacity: 0; transform: scale(0.4); }
+}
+
+.hero > *:not(.hero-net) {
+  position: relative;
+  z-index: 2;
+}
+
+/* --- Temperature rig — the sampling console ------------------- */
+.temp-rig {
+  display: none;
+}
+
+.temp-rig {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  margin-top: var(--space-2);
+}
+
+.rig-group {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.rig-actions {
+  gap: var(--space-3);
+}
+
+@media (max-width: 639px) {
+  .site-nav {
+    row-gap: 0;
+  }
+
+  .lang-summary {
+    padding: 0.65rem 0;
+  }
+
+  .nav-link {
+    padding: 0.65rem 0;
+  }
+}
+
+/* Console stacks vertically on narrow screens. */
+@media (max-width: 639px) {
+  .temp-rig {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .temp-input {
+    width: clamp(120px, 44vw, 180px);
+  }
+}
+
+.temp-label {
+  font-family: "DM Mono", monospace;
+  font-weight: 400;
+  font-size: var(--step--2);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent-2);
+}
+
+.temp-input {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 180px;
+  height: 32px; /* generous hitbox; the painted track stays 2px */
+  background: transparent;
+  cursor: pointer;
+}
+
+/* Per-slider fill mapping: each track paints its own knob's value. */
+#temp.temp-input { --fill: var(--temp, 0.7); }
+#topp.temp-input { --fill: var(--topp, 1); }
+
+.temp-input::-webkit-slider-runnable-track {
+  height: 2px;
+  background: linear-gradient(
+    to right,
+    var(--accent) calc(var(--fill, 0.7) * 100%),
+    var(--border) calc(var(--fill, 0.7) * 100%)
+  );
+}
+
+.temp-input::-moz-range-track {
+  height: 2px;
+  background: linear-gradient(
+    to right,
+    var(--accent) calc(var(--fill, 0.7) * 100%),
+    var(--border) calc(var(--fill, 0.7) * 100%)
+  );
+}
+
+.temp-input::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 5px;
+  height: 18px;
+  margin-top: -8px;
+  background: var(--heading);
+  border: none;
+  border-radius: 1px;
+}
+
+.temp-input::-moz-range-thumb {
+  width: 5px;
+  height: 18px;
+  background: var(--heading);
+  border: none;
+  border-radius: 1px;
+}
+
+.temp-readout {
+  font-family: "DM Mono", monospace;
+  font-weight: 400;
+  font-size: var(--step--2);
+  letter-spacing: 0.12em;
+  color: var(--accent);
+  min-width: 5ch;
+  font-variant-numeric: tabular-nums;
+}
+
+.temp-readout--eff {
+  color: var(--pitch);
+  opacity: 0.85;
+}
+
+.seed-btn {
+  background: none;
+  border: none;
+  padding: var(--space-2) 0 0.2rem;
+  min-height: 44px;
+  margin-top: calc(-1 * var(--space-2));
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  font-family: "DM Mono", monospace;
+  font-weight: 400;
+  font-size: var(--step--2);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent-2);
+  border-bottom: 1px solid transparent;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.seed-btn:hover,
+.seed-btn:focus-visible {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.auto-btn[aria-pressed="true"] {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  text-shadow: 0 0 10px rgba(44, 232, 224, 0.55);
+}
+
+.sample-btn:hover span,
+.sample-btn:focus-visible span {
+  box-shadow: 0 0 8px rgba(44, 232, 224, 0.8);
+}
+
+.expertise { counter-reset: sec; }
+
+.expertise-card h2::before {
+  counter-increment: sec;
+  content: counter(sec, decimal-leading-zero);
+  font-family: "DM Mono", monospace;
+  font-weight: 400;
+  font-size: 0.5em;
+  letter-spacing: 0.2em;
+  color: var(--accent-2);
+  display: block;
+  margin-bottom: 0.4rem;
+}
+
+.expertise-card {
+  border: 1px solid var(--border);
+  border-radius: 0;
+  padding: var(--space-3);
+}
+
+.expertise-card:hover h2 {
+  color: var(--accent);
+}
+
+.rra-title::after {
+  content: "";
+  display: block;
+  width: 3rem;
+  height: 3px;
+  background: var(--accent);
+  box-shadow: 0 0 12px rgba(44, 232, 224, 0.6);
+  margin-top: 0.9rem;
+}
+
+/* In the neural world the sample swap replaces the idle entrance. */
+.js .hero-headline span {
+  animation: none;
+}
+
+/* ============================================================
+ * Blueprints — shared page primitives (2026-08-28)
+ * PageHeader, Section (Dossier rhythm), ChipGroup, SnapRow,
+ * EntryCard, NetStrip. See docs/design-system.md.
+ * ============================================================ */
+
+.page-kicker {
+  font-family: "DM Mono", monospace;
+  font-weight: 400;
+  font-size: var(--step--2);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0 0 var(--space-2);
+}
+
+/* Dossier sections: meta rail beside content on wide screens. */
+.bp-section {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-2) var(--space-5);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--border);
+  margin-bottom: var(--space-5);
+}
+
+@media (min-width: 720px) {
+  .bp-section {
+    grid-template-columns: 160px 1fr;
+  }
+}
+
+.bp-section-meta {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.bp-index {
+  font-family: "DM Mono", monospace;
+  font-weight: 400;
+  font-size: var(--step--2);
+  letter-spacing: 0.2em;
+  color: var(--accent-2);
+}
+
+.bp-label {
+  font-family: "DM Mono", monospace;
+  font-weight: 400;
+  font-size: var(--step--2);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--pitch);
+}
+
+.bp-section-body {
+  min-width: 0;
+}
+
+/* Scroll-snap strip: native swipe, keyboard scrollable, no JS. */
+.snap-row {
+  display: flex;
+  gap: var(--space-3);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding-bottom: var(--space-2);
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.snap-row > * {
+  scroll-snap-align: start;
+  flex: 0 0 auto;
+}
+
+/* Entry teaser card (Log / Master-detail blueprints). */
+.entry-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  width: 260px;
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: 0;
+  text-decoration: none;
+  transition: border-color 0.2s ease;
+}
+
+.entry-card:hover,
+.entry-card:focus-visible {
+  border-color: var(--accent);
+}
+
+.entry-card-index {
+  font-family: "DM Mono", monospace;
+  font-weight: 400;
+  font-size: var(--step--2);
+  letter-spacing: 0.2em;
+  color: var(--accent-2);
+}
+
+.entry-card-title {
+  font-family: "Archivo", sans-serif;
+  font-weight: 600;
+  font-size: var(--step-1);
+  line-height: 1.3;
+  color: var(--heading);
+  margin: 0;
+}
+
+.entry-card-meta {
+  font-family: "DM Mono", monospace;
+  font-weight: 300;
+  font-size: var(--step--2);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--pitch);
+}
+
+/* Document layout: sticky section rail beside the prose. */
+.doc-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-3) var(--space-5);
+}
+
+@media (min-width: 720px) {
+  .doc-layout {
+    grid-template-columns: 180px 1fr;
+    align-items: start;
+  }
+
+  .doc-toc {
+    position: sticky;
+    top: var(--space-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+}
+
+.doc-toc a {
+  font-family: "DM Mono", monospace;
+  font-weight: 300;
+  font-size: var(--step--2);
+  letter-spacing: 0.08em;
+  color: var(--pitch);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.doc-toc a:hover,
+.doc-toc a:focus-visible {
+  color: var(--accent);
+}
+
+/* Working-method principle list (absorbed from the retired Systems Lab). */
+.principle-list {
+  list-style: none;
+  padding: 0;
+  margin: var(--space-3) 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.principle-list li {
+  font-family: "DM Mono", monospace;
+  font-weight: 300;
+  font-size: var(--step--1);
+  line-height: 1.8;
+  color: var(--body);
+  padding-left: 1.5rem;
+  position: relative;
+}
+
+.principle-list li::before {
+  content: "·";
+  color: var(--accent);
+  position: absolute;
+  left: 0.5rem;
+  font-weight: 700;
+}
+
+.principle-list strong {
+  color: var(--heading);
+  font-weight: 400;
+}
+
+/* Net strip: identity fragment used as a page divider. */
+.net-strip {
+  display: block;
+  width: 100%;
+  height: 72px;
+  color: var(--accent);
+  opacity: 0.38;
+  margin: var(--space-5) 0;
+}
+
+/* === Blog (Log blueprint) ===================================== */
+.blog-empty {
+  font-family: "DM Mono", monospace;
+  font-weight: 300;
+  font-size: var(--step-0);
+  color: var(--pitch);
+}
+
+.blog-list {
+  display: flex;
+  flex-direction: column;
+  margin-top: var(--space-5);
+  border-top: 1px solid var(--border);
+}
+
+.blog-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-1);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--border);
+}
+
+@media (min-width: 640px) {
+  .blog-row {
+    grid-template-columns: 120px 1fr;
+    gap: var(--space-3);
+    align-items: baseline;
+  }
+}
+
+.blog-row-date {
+  font-family: "DM Mono", monospace;
+  font-weight: 400;
+  font-size: var(--step--2);
+  letter-spacing: 0.12em;
+  color: var(--pitch);
+}
+
+.blog-row-title {
+  font-family: "Archivo", sans-serif;
+  font-weight: 600;
+  font-size: var(--step-1);
+  line-height: 1.35;
+  color: var(--heading);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.blog-row-title:hover,
+.blog-row-title:focus-visible {
+  color: var(--accent);
+}
+
+.blog-row-desc {
+  grid-column: 2;
+  font-family: "DM Mono", monospace;
+  font-weight: 300;
+  font-size: var(--step--1);
+  line-height: 1.7;
+  color: var(--body);
+}
+
+.post-prose h2 {
+  margin-top: var(--space-5);
+}
+

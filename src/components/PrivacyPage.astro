@@ -1,0 +1,43 @@
+---
+// Shared trilingual privacy shell (ADR 0010): the data-protection
+// notice with a section TOC. Section ids are locale-constant; the
+// local-storage section must name exactly the keys the site uses in
+// every locale — the privacy contract asserts this against the built
+// pages.
+import Layout from '../layouts/Layout.astro';
+import PageHeader from './PageHeader.astro';
+import NetStrip from './NetStrip.astro';
+import type { PrivacyPack } from '../i18n/content/privacy';
+
+interface Props {
+  locale: 'en' | 'tr' | 'de';
+  pack: PrivacyPack;
+  seed: number;
+}
+
+const { locale, pack, seed } = Astro.props;
+---
+
+<Layout locale={locale} title={`${pack.heading} — Güven Gürsel`} description={pack.description}>
+  <section class="doc">
+    <PageHeader kicker={pack.kicker} title={pack.heading} lede={pack.lede} />
+    <NetStrip seed={seed} class="net-strip" />
+
+    <div class="doc-layout">
+      <nav class="doc-toc" aria-label={pack.tocLabel}>
+        {pack.sections.map((s) => (
+          <a href={`#${s.id}`}>{s.heading}</a>
+        ))}
+      </nav>
+
+      <div class="legal-prose">
+        {pack.sections.map((s) => (
+          <section>
+            <h2 id={s.id}>{s.heading}</h2>
+            <p set:html={s.html} />
+          </section>
+        ))}
+      </div>
+    </div>
+  </section>
+</Layout>

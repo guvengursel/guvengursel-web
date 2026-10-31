@@ -1,0 +1,19 @@
+---
+// Shared page header: micro kicker, single h1 title, optional lede.
+// Every blueprint except Stage opens with this component, which also
+// guarantees the one-h1-per-page contract checked by verify-built-site.
+
+interface Props {
+  title: string;
+  kicker?: string;
+  lede?: string;
+}
+
+const { title, kicker, lede } = Astro.props;
+---
+
+<header class="page-header">
+  {kicker && <p class="page-kicker">{kicker}</p>}
+  <h1 class="page-title">{title}</h1>
+  {lede && <p class="page-lede">{lede}</p>}
+</header>

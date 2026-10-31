@@ -1,0 +1,219 @@
+/* === Layout chrome === */
+/* Grid chrome placement: below the single-row breakpoint the logo and
+   the language menu share the first row, the full-width navigation
+   sits below. Grid line placement keeps DOM order, tab order, and
+   visual order identical at every width (flex order tricks would
+   desynchronize them). */
+.site-header {
+  display: grid;
+  grid-template-columns: min-content 1fr;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  padding-bottom: 1.25rem;
+  margin-bottom: var(--space-7);
+  border-bottom: 0.5px solid var(--border);
+}
+
+.logo-wrap,
+.lang-menu {
+  grid-row: 1;
+}
+
+.logo-wrap {
+  grid-column: 1;
+}
+
+.lang-menu {
+  grid-column: 2;
+  justify-self: end;
+}
+
+.site-nav {
+  grid-row: 2;
+  grid-column: 1 / -1;
+}
+
+.site-nav {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+}
+
+.nav-link {
+  font-family: "DM Mono", monospace;
+  font-weight: 400;
+  font-size: var(--step--1);
+  letter-spacing: 0.08em;
+  color: var(--nav-link);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color 0.2s ease;
+}
+
+.nav-link:hover {
+  color: var(--nav-link-hover);
+}
+
+.nav-sep {
+  color: var(--nav-link);
+  font-size: var(--step--1);
+  user-select: none;
+}
+
+/* Language menu (ADR 0008): compact native <details> dropdown. The
+   closed control shows the current locale code plus a CSS-drawn caret;
+   the panel lists all locale codes (full endonyms live in aria-labels).
+   Mobile-first it sits at the right end of the logo row; from the
+   single-row breakpoint it joins the header row behind the divider. */
+.lang-menu {
+  display: flex;
+  align-items: center;
+}
+
+.lang-details {
+  position: relative;
+}
+
+.lang-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: "DM Mono", monospace;
+  font-weight: 400;
+  font-size: var(--step--1);
+  letter-spacing: 0.08em;
+  color: var(--heading);
+  white-space: nowrap;
+  cursor: pointer;
+  list-style: none;
+  transition: color 0.2s ease;
+}
+
+.lang-summary::-webkit-details-marker {
+  display: none;
+}
+
+.lang-summary:hover {
+  color: var(--nav-link-hover);
+}
+
+.lang-caret {
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid var(--nav-link);
+  transition: transform 0.2s ease;
+}
+
+.lang-details[open] .lang-caret {
+  transform: rotate(180deg);
+}
+
+.lang-options {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  min-width: 4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.75rem;
+  background: var(--bg);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-s);
+  z-index: 20;
+  list-style: none;
+}
+
+.lang-link[aria-current="true"] {
+  color: var(--heading);
+}
+
+.site-main {
+  flex: 1;
+}
+
+.site-footer {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+  gap: var(--space-2);
+  align-items: flex-start;
+  padding-top: 1.5rem;
+  margin-top: 3rem;
+  border-top: 0.5px solid var(--border);
+}
+
+.footer-copy {
+  font-family: "DM Mono", monospace;
+  font-weight: 400;
+  font-size: var(--step--1);
+  color: var(--body);
+}
+
+.footer-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+@media (min-width: 640px) {
+  body {
+    padding:
+      max(2rem, env(safe-area-inset-top))
+      max(2rem, env(safe-area-inset-right))
+      max(2rem, env(safe-area-inset-bottom))
+      max(2rem, env(safe-area-inset-left));
+  }
+
+  .sumi {
+    padding: 2.5rem 3rem;
+    min-height: calc(100vh - 4rem);
+    min-height: calc(100svh - 4rem);
+  }
+
+  /* Header still wraps: the language menu shares the logo row at the
+     right end, the navigation keeps its own wrapped row below. */
+  .site-header {
+    gap: var(--space-4);
+  }
+
+  .site-footer {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+/* Single-row header: logo left, navigation right, language menu at the
+   far right behind a thin divider. The row must hold the widest nav
+   labels (Turkish/German, four links) plus the compact dropdown —
+   breakpoint verified by browser measurement. */
+@media (min-width: 720px) {
+  .site-header {
+    grid-template-columns: min-content 1fr min-content;
+  }
+
+  .site-nav {
+    grid-row: 1;
+    grid-column: 2;
+    justify-self: end;
+    width: auto;
+    flex-wrap: nowrap;
+    gap: var(--space-4);
+  }
+
+  .lang-menu {
+    grid-row: 1;
+    grid-column: 3;
+    padding-left: var(--space-4);
+    border-left: 0.5px solid var(--border);
+  }
+}
+

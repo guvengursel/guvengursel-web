@@ -1,0 +1,48 @@
+---
+// Blog index (Log blueprint): newest-first list of the locale's posts.
+import type { CollectionEntry } from 'astro:content';
+import PageHeader from './PageHeader.astro';
+import NetStrip from './NetStrip.astro';
+import SnapRow from './SnapRow.astro';
+import EntryCard from './EntryCard.astro';
+
+interface Props {
+  posts: CollectionEntry<'blog'>[];
+  hrefBase: string;
+  labels: { kicker: string; title: string; lede: string; empty: string };
+}
+
+const { posts, hrefBase, labels } = Astro.props;
+const sorted = [...posts].sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+const slugOf = (post: CollectionEntry<'blog'>) => post.id.split('/').slice(1).join('/');
+---
+
+<section class="blog">
+  <PageHeader kicker={labels.kicker} title={labels.title} lede={labels.lede} />
+  <NetStrip seed={47} class="net-strip" />
+
+  {sorted.length === 0 && <p class="blog-empty">{labels.empty}</p>}
+
+  {sorted.length > 0 && (
+    <SnapRow label={labels.title}>
+      {sorted.map((post, i) => (
+        <EntryCard
+          index={String(i + 1).padStart(2, '0')}
+          title={post.data.title}
+          meta={post.data.pubDate.toISOString().slice(0, 7)}
+          href={`${hrefBase}/${slugOf(post)}`}
+        />
+      ))}
+    </SnapRow>
+  )}
+
+  <div class="blog-list">
+    {sorted.map((post) => (
+      <article class="blog-row">
+        <span class="blog-row-date">{post.data.pubDate.toISOString().slice(0, 10)}</span>
+        <a href={`${hrefBase}/${slugOf(post)}`} class="blog-row-title">{post.data.title}</a>
+        <span class="blog-row-desc">{post.data.description}</span>
+      </article>
+    ))}
+  </div>
+</section>

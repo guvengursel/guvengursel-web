@@ -1,0 +1,59 @@
+---
+// Shared trilingual contact shell: header, net strip, and the three
+// contact links. Labels are per-locale copy; the destinations are
+// constants.
+import Layout from '../layouts/Layout.astro';
+import PageHeader from './PageHeader.astro';
+import NetStrip from './NetStrip.astro';
+
+interface ContactCopy {
+  title: string;
+  description: string;
+  kicker: string;
+  heading: string;
+  lede: string;
+  emailLabel: string;
+  githubLabel: string;
+  xLabel: string;
+}
+
+interface Props {
+  locale: 'en' | 'tr' | 'de';
+  copy: ContactCopy;
+  seed: number;
+}
+
+const { locale, copy, seed } = Astro.props;
+---
+
+<Layout locale={locale} title={copy.title} description={copy.description}>
+  <section class="contact">
+    <PageHeader
+      kicker={copy.kicker}
+      title={copy.heading}
+      lede={copy.lede}
+    />
+    <NetStrip seed={seed} class="net-strip" />
+
+    <section class="contact-links">
+    <a class="contact-link" href="mailto:contact@guvengursel.com">
+      <span class="contact-label">{copy.emailLabel}</span>
+      <span class="contact-value">contact@guvengursel.com</span>
+    </a>
+    <a class="contact-link"
+       href="https://github.com/guvengursel"
+       target="_blank"
+       rel="me noopener">
+      <span class="contact-label">{copy.githubLabel}</span>
+      <span class="contact-value">github.com/guvengursel</span>
+    </a>
+    <a class="contact-link"
+       href="https://x.com/gurselguven"
+       target="_blank"
+       rel="me noopener">
+      <span class="contact-label">{copy.xLabel}</span>
+      <span class="contact-value">@gurselguven</span>
+    </a>
+    </section>
+  </section>
+</Layout>
